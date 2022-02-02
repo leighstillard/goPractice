@@ -1,23 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"io"
-	"os"
+	"log"
+	"net/http"
 )
 
 // It returns the number of bytes writte and any write error encountered.
-func Greet(format string, a ...interface{}) (n int, err error) {
-	return Fprintf(os.Stdout, format, a...)
+func Greet(writer io.Writer, name string) {
+	fmt.Fprintf(writer, "Hello, %s", name)
 }
 
-func Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error} (
-	p := newPrinter()
-	p.doPrintf(format, a)
-	n, err = w.Write(p.buf)
-	p.free()
-	return
-))
+func MyGreeterHandler(w http.ResponseWriter, r *http.Request) {
+	Greet(w, "world")
+}
 
-type Writer interface {
-	Write(p []byte) (n int, err error)
+func main() {
+	log.Fatal(http.ListenAndServe(":5000", http.HandlerFunc(MyGreeterHandler)))
 }
