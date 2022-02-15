@@ -8,22 +8,38 @@ import (
 )
 
 func TestRacer(t *testing.T) {
+	t.Run("returns an error if a server doesn't respond within 10s", func(t *testing.T) {
+		server := makeDelayedSender(25 * time.Millisecond)
 
-	slowServer := makeDelayedSender(20 * time.Millisecond)
-	fastServer := makeDelayedSender(0)
+		defer server.Close()
 
-	defer slowServer.Close()
-	defer fastServer.Close()
+		_, err := configurableRacer(server.URL, server.URL, 20*time.Millisecond)
 
-	slowURL := slowServer.URL
-	fastURL := fastServer.URL
+		if err == nil {
+			t.Errorf("expected an error but didn't get one")
+		}
+	})
 
-	want := fastURL
-	got := Racer(slowURL, fastURL)
+	t.Run("compares speeds of servers, returning the url of the fastest one", func(t *testing.T) {
+		slowServer := makeDelayedSender(20 * time.Millisecond)
+		fastServer := makeDelayedSender(0)
 
-	if got != want {
-		t.Errorf("got %q want %q", got, want)
-	}
+		defer slowServer.Close()
+		defer fastServer.Close()
+
+		slowURL := slowServer.URL
+		fastURL := fastServer.URL
+
+		want := fastURL
+		got, err := Racer(slowURL, fastURL)
+
+		if err != nil {
+			t.Fatalf("did not expect an error but got one %v", err)
+		}
+		if got != want {
+			t.Errorf("got %q want %q", got, want)
+		}
+	})
 }
 
 func makeDelayedSender(delay time.Duration) *httptest.Server {
